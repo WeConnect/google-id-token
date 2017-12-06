@@ -21,6 +21,7 @@
 #  refreshes from Google when required (once per day by default)
 #
 # @author Tim Bray, adapted from code by Bob Aman
+# further adapted by WeWork
 
 require 'google-id-token/version'
 require 'json'
@@ -100,15 +101,71 @@ module GoogleIDToken
       end
     end
 
+    ##
+    # Acts as check, but does not raise errors for audience or client-id mismatch
+    def open_token(token, aud, cid = nil)
+      synchronize do
+        payload = open_cached_certs(token, aud, cid)
+
+        unless payload
+          # no certs worked, might've expired, refresh
+          if refresh_certs
+            payload = open_cached_certs(token, aud, cid)
+
+            unless payload
+              raise SignatureError, 'Token not verified as issued by Google'
+            end
+          else
+            raise CertificateError, 'Unable to retrieve Google public keys'
+          end
+        end
+
+        payload
+      end
+    end
+
     private
 
     # tries to validate the token against each cached cert.
     # Returns the token payload or raises a ValidationError or
     #  nil, which means none of the certs validated.
     def check_cached_certs(token, aud, cid)
-      payload = nil
+      payload = find_payload(token)
 
+      if payload
+        if !(payload.has_key?('aud') && payload['aud'] == aud)
+          raise AudienceMismatchError, 'Token audience mismatch'
+        end
+        if cid && payload['cid'] != cid
+          raise ClientIDMismatchError, 'Token client-id mismatch'
+        end
+        if !GOOGLE_ISSUERS.include?(payload['iss'])
+          raise InvalidIssuerError, 'Token issuer mismatch'
+        end
+        payload
+      else
+        nil
+      end
+    end
+
+    ##
+    # Acts as check_cached_certs, but does not raise errors for audience or client-id mismatch
+    def open_cached_certs(token, aud, cid)
+      payload = find_payload(token)
+
+      if payload
+        if !GOOGLE_ISSUERS.include?(payload['iss'])
+          raise InvalidIssuerError, 'Token issuer mismatch'
+        end
+        payload
+      else
+        nil
+      end
+    end
+
+    def find_payload(token)
       # find first public key that validates this token
+      payload = nil
       @certs.detect do |key, cert|
         begin
           public_key = cert.public_key
@@ -130,21 +187,7 @@ module GoogleIDToken
           nil # go on, try the next cert
         end
       end
-
-      if payload
-        if !(payload.has_key?('aud') && payload['aud'] == aud)
-          raise AudienceMismatchError, 'Token audience mismatch'
-        end
-        if cid && payload['cid'] != cid
-          raise ClientIDMismatchError, 'Token client-id mismatch'
-        end
-        if !GOOGLE_ISSUERS.include?(payload['iss'])
-          raise InvalidIssuerError, 'Token issuer mismatch'
-        end
-        payload
-      else
-        nil
-      end
+      payload
     end
 
     # returns false if there was a problem
