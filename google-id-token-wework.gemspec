@@ -14,16 +14,16 @@
 # limitations under the License.
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'google-id-token/version'
+require 'google-id-token-wework/version'
 
 Gem::Specification.new do |s|
-  s.name = 'google-id-token'
+  s.name = 'google-id-token-wework'
   s.version = GoogleIDToken::VERSION
 
-  s.homepage = 'https://github.com/google/google-id-token/'
+  s.homepage = 'https://github.com/WeConnect/google-id-token-wework'
   s.license = 'APACHE-2.0'
-  s.summary = 'Google ID Token utilities'
-  s.description = 'Google ID Token utilities; currently just a parser/checker'
+  s.summary = 'WeWork Modified Google ID Token utilities'
+  s.description = 'WeWork Modified Google ID Token utilities; currently just a parser/checker'
 
   s.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
   s.require_paths = ["lib"]
@@ -35,6 +35,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rspec'
   s.add_development_dependency 'openssl'
 
-  s.authors = ['Tim Bray', 'Bob Aman']
-  s.email = 'tbray@textuality.com'
+  s.authors = ['Tim Bray', 'Bob Aman', 'Further modified by WeWork']
+  s.email = 'eric.swirsky@wework.com'
 end

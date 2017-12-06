@@ -23,7 +23,7 @@
 # @author Tim Bray, adapted from code by Bob Aman
 # further adapted by WeWork
 
-require 'google-id-token/version'
+require 'google-id-token-wework/version'
 require 'json'
 require 'jwt'
 require 'monitor'
